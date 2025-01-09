@@ -24,7 +24,6 @@
     },
 
     "weighing": "mfb",
-
     "optimizer": {
         "type": "adam",
         "optimizer_params": {

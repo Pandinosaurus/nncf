@@ -103,9 +103,36 @@ ENV/
 
 # PyCharm
 .idea
+.run
 
 # snapshots
 *.tar
 
-# object detection eval results
+# pylint config is left at dev's discretion, CI uses ruff/isort/black instead
+.pylintrc
+
+# VSCode
+.vscode/
+
+# NNCF debug
+nncf_debug/
+
+# NNCF examples
 examples/torch/object_detection/eval/
+examples/**/*.xml
+examples/**/*.bin
+examples/**/*.pt
+examples/**/*.onnx
+examples/**/statistics
+examples/**/runs
+examples/**/results
+examples/**/metrics.json
+datasets/**
+
+# Tests
+tests/**/runs/**
+tests/**/tmp*/**
+open_model_zoo/
+nncf-tests.xml
+compressed_graph.dot
+original_graph.dot

@@ -1,18 +1,16 @@
-"""
- Copyright (c) 2021 Intel Corporation
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-      http://www.apache.org/licenses/LICENSE-2.0
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-"""
+# Copyright (c) 2025 Intel Corporation
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#      http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-from typing import List, Optional, Dict, Any
 from bisect import bisect_right
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
@@ -26,8 +24,7 @@ class PolynomialDecaySchedule:
     For more details about polynomial decay see the [paper](https://arxiv.org/abs/1710.01878).
     """
 
-    def __init__(self, initial_value: float, target_value: float, target_epoch: int,
-                 power: float, concave: bool):
+    def __init__(self, initial_value: float, target_value: float, target_epoch: int, power: float, concave: bool):
         """
          Initializes a schedule with a polynomial decay function.
 
@@ -72,7 +69,7 @@ class PolynomialDecaySchedule:
         else:
             value = self.initial_value + (self.target_value - self.initial_value) * np.power(progress, self.power)
 
-        return value
+        return float(value)
 
 
 class MultiStepSchedule:
@@ -91,7 +88,7 @@ class MultiStepSchedule:
             equal to the number of elements in the `boundaries` list plus one.
         """
         if len(boundaries) + 1 != len(values):
-            raise ValueError('The length of `values` should be 1 more than the length of `boundaries`')
+            raise ValueError("The length of `values` should be 1 more than the length of `boundaries`")
 
         self.boundaries = boundaries
         self.values = values
@@ -144,7 +141,7 @@ class ExponentialDecaySchedule:
         if self.target_epoch == 0:
             return self.target_value
 
-        value = self.initial_value * np.power(self.decay_rate, epoch / self.target_epoch)
+        value = self.initial_value * float(np.power(self.decay_rate, epoch / self.target_epoch))
         return max(value, self.target_value)
 
 
@@ -164,7 +161,7 @@ class BaseCompressionScheduler(CompressionScheduler):
     ```
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initializes the internal state of the compression scheduler specified by:
             - `current_step` is the index of the global training step, counted
@@ -182,8 +179,26 @@ class BaseCompressionScheduler(CompressionScheduler):
         update the compression method state taking into account the training step,
         there is the same for current_epoch is -1.
         """
-        self.current_step = -1
-        self.current_epoch = -1
+        self._current_step = -1
+        self._current_epoch = -1
+
+    @property
+    def current_step(self) -> int:
+        """
+        Return current step.
+
+        :return: Current step.
+        """
+        return self._current_step
+
+    @property
+    def current_epoch(self) -> int:
+        """
+        Return current epoch.
+
+        :return: Current epoch.
+        """
+        return self._current_epoch
 
     def step(self, next_step: Optional[int] = None) -> None:
         """
@@ -194,8 +209,8 @@ class BaseCompressionScheduler(CompressionScheduler):
             will update the state of the compression method.
         """
         if next_step is None:
-            next_step = self.current_step + 1
-        self.current_step = next_step
+            next_step = self._current_step + 1
+        self._current_step = next_step
 
     def epoch_step(self, next_epoch: Optional[int] = None) -> None:
         """
@@ -206,8 +221,8 @@ class BaseCompressionScheduler(CompressionScheduler):
             will update the state of the compression method.
         """
         if next_epoch is None:
-            next_epoch = self.current_epoch + 1
-        self.current_epoch = next_epoch
+            next_epoch = self._current_epoch + 1
+        self._current_epoch = next_epoch
 
     def load_state(self, state: Dict[str, Any]) -> None:
         """
@@ -216,8 +231,8 @@ class BaseCompressionScheduler(CompressionScheduler):
 
         :param state: Output of `get_state()` method.
         """
-        self.current_step = state['current_step']
-        self.current_epoch = state['current_epoch']
+        self._current_step = state["current_step"]
+        self._current_epoch = state["current_epoch"]
 
     def get_state(self) -> Dict[str, Any]:
         """
@@ -225,14 +240,10 @@ class BaseCompressionScheduler(CompressionScheduler):
 
         :return: The compression scheduler state.
         """
-        return {
-            'current_step': self.current_step,
-            'current_epoch': self.current_epoch
-        }
+        return {"current_step": self._current_step, "current_epoch": self._current_epoch}
 
 
 class StubCompressionScheduler(CompressionScheduler):
-
     def step(self, next_step: Optional[int] = None) -> None:
         pass
 

@@ -4,7 +4,6 @@
   "input_info": {
     "sample_size": [2, 3, 300, 300]
   },
-  "pretrained": true,
   "num_classes": 21,
   "dataset": "voc",
   "preprocessing": {
@@ -14,8 +13,7 @@
     "rgb": true
   },
   "batch_size": 128,
-  "max_iter": 75000,
-  "iter_size": 1,
+  "epochs": 580,
   "save_freq": 50,
   "optimizer": {
     "type": "Adam",
@@ -35,7 +33,7 @@
     "aspect_ratios": [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
     "clip": false,
     "flip": true,
-    "top_k": 200,
-  }
+    "top_k": 200
+  },
+  "export_to_ir_via_onnx": true
 }
-

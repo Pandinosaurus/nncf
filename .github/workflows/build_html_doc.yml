@@ -1,0 +1,34 @@
+name: HTML documentation build
+permissions: read-all
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+jobs:
+  build-html:
+    timeout-minutes: 10
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+        with:
+          python-version: 3.10.14
+          cache: pip
+      - name: Install NNCF and doc requirements
+        run: |
+          pip install .
+          pip install -r docs/api/requirements.txt
+      - name: Build API docs
+        run: |
+          sphinx-build -M html docs/api/source html_build
+      - name: Upload built HTMLs as job artifact
+        uses: alehechka/upload-tartifact@a055d3a102b9ed9cfff1263bc713295047d0197e # v2
+        with:
+          name: html_doc_artifact
+          path: html_build/html

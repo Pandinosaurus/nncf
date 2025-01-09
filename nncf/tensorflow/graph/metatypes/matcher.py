@@ -1,28 +1,25 @@
-"""
- Copyright (c) 2021 Intel Corporation
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-      http://www.apache.org/licenses/LICENSE-2.0
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-"""
+# Copyright (c) 2025 Intel Corporation
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#      http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from typing import Type
 
 import tensorflow as tf
 
 from nncf.common.graph.operator_metatypes import OperatorMetatype
+from nncf.common.graph.operator_metatypes import UnknownMetatype
 from nncf.tensorflow.graph.metatypes.keras_layers import KERAS_LAYER_METATYPES
 from nncf.tensorflow.graph.metatypes.tf_ops import TF_OPERATION_METATYPES
 
 
-def get_keras_layer_metatype(
-        layer: tf.keras.layers.Layer,
-        determine_subtype: bool = True) -> Type[OperatorMetatype]:
+def get_keras_layer_metatype(layer: tf.keras.layers.Layer, determine_subtype: bool = True) -> Type[OperatorMetatype]:
     """
     Returns a metatype of the Keras layer.
 
@@ -40,9 +37,9 @@ def get_keras_layer_metatype(
     y = layer(x)
 
     metatype = get_keras_layer_metatype(layer, determine_subtype = False)
-    assert metatype == TFDepthwiseConv2DSubLayerMetatype
-    metatype = get_keras_layer_metatype(layer, determine_subtype = True)
     assert metatype == TFConv2DLayerMetatype
+    metatype = get_keras_layer_metatype(layer, determine_subtype = True)
+    assert metatype == TFDepthwiseConv2DSubLayerMetatype
     ```
 
     :param layer: The Keras layer.
@@ -50,13 +47,13 @@ def get_keras_layer_metatype(
         returns the primary metatype otherwise.
     :return: A metatype.
     """
-    layer_metatype = KERAS_LAYER_METATYPES.get_operator_metatype_by_op_name(
-        layer.__class__.__name__)
+    layer_metatype = KERAS_LAYER_METATYPES.get_operator_metatype_by_op_name(layer.__class__.__name__)
 
     if not determine_subtype:
         return layer_metatype
-
-    subtype = layer_metatype.determine_subtype(layer)
+    subtype = None
+    if layer_metatype is not UnknownMetatype:
+        subtype = layer_metatype.determine_subtype(layer)
     if subtype is not None:
         return subtype
     return layer_metatype

@@ -1,0 +1,28 @@
+name: pre-commit-linters
+permissions: read-all
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+        with:
+          python-version: 3.10.14
+      - name: Install pre-commit package
+        run: make install-pre-commit
+      - name: Run pre-commit linter suite
+        run: make pre-commit
+  md-dead-link-check:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: AlexanderDokuchaev/md-dead-link-check@cc3ed55268899a1a6d5fd7068abbc4591eab1f74 # v0.9
+
