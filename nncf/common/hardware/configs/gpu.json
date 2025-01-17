@@ -234,6 +234,12 @@
                 "scales": "unified"
             }
         },
+        {
+            "type": "ReduceSum",
+            "quantization": {
+                "activations": "q8_a"
+            }
+        },
         {"type": "Flatten"},
         {"type": "Squeeze"},
         {"type": "Unsqueeze"},
@@ -241,6 +247,7 @@
         {"type": "Crop"},
         {"type": "Transpose"},
         {"type": "Tile"},
-        {"type": "StridedSlice"}
+        {"type": "StridedSlice"},
+        {"type": "Slice"}
     ]
 }

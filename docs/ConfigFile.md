@@ -1,12 +1,13 @@
 # NNCF Configuration File Description
 
-The Neural Network Compression Framework (NNCF) is designed to work with the configuration file where the parameters of compression that should be applied to the model are specified. 
-These parameters are organized as a dictionary and stored in a JSON file that is deserialized when the training starts. 
+The Neural Network Compression Framework (NNCF) is designed to work with the configuration file where the parameters of compression that should be applied to the model are specified.
+These parameters are organized as a dictionary and stored in a JSON file that is deserialized when the training starts.
 The JSON file allows using comments that are supported by the [jstyleson](https://github.com/linjackson78/jstyleson) Python package.
+The NNCF config .json file is validated against a JSON schema - you can review the latest version of the schema at https://openvinotoolkit.github.io/nncf/.
 
-Below is an example of the NNCF configuration file
+Below is an example of the NNCF configuration file:
 
-```
+```json5
 {
     "input_info": [ // Required - describe the specifics of your model inputs here. This information is used to build the internal graph representation that is leveraged for proper compression functioning, and for exporting the compressed model to ONNX. Inputs in the array without a "keyword" attribute are described in the order of the model's "forward" function argument order.
                     {
@@ -21,12 +22,12 @@ Below is an example of the NNCF configuration file
                         "type": "long",
                         "filler": "ones",
                         "keyword": "another_input"
-                    },
+                    }
 
                 },
-            ],
+            ]
         },
-        "target_device": "VPU", // The target device, the specificity of which will be taken into account while compressing in order to obtain the best performance for this type of device. The default "ANY" means compatible quantization supported by any HW. The parameter takes values from the set ('CPU', 'GPU', 'VPU', 'ANY', 'TRIAL'). Set this value to 'TRIAL' if you are going to use a custom quantization schema.. Optional.
+        "target_device": "NPU", // The target device, the specificity of which will be taken into account while compressing in order to obtain the best performance for this type of device. The default "ANY" means compatible quantization supported by any HW. The parameter takes values from the set ('CPU', 'GPU', 'NPU', 'ANY', 'TRIAL', 'CPU_SPR'). Set this value to 'TRIAL' if you are going to use a custom quantization schema.. Optional.
         "compression": [ // One or more definitions for the compression algorithms to be applied to the model; either a single JSON object or an array of JSON objects. See README for each compression algorithm for a description of the available config parameters.
             {
                 "algorithm": quantization,
@@ -61,7 +62,6 @@ Below is an example of the NNCF configuration file
     }
 }
 ```
-
 
 The "compression" section is the core of the configuration file.
 It defines the specific compression algorithms that are to be applied to the model.

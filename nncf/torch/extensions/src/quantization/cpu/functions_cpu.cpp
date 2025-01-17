@@ -11,11 +11,13 @@ at::Tensor q_cpu_forward(
         scalar_t levels) {
     at::Tensor s = (levels - 1) / input_range;
     auto output = at::max(at::min(input, input_low + input_range), input_low);
+    // zero_point is referred as ZP in docs
+    auto zero_point = (-input_low * s).round_();
     output -= input_low;
     output *= s;
+    output -= zero_point;
     output = output.round_();
     output = output.div_(s);
-    output += input_low;
     return output;
 }
 
@@ -78,7 +80,8 @@ at::Tensor q_forward(
     }
 
     at::Tensor output;
-    AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.type(), "q_cpu_forward", ([&] {
+
+    DISPATCH_TENSOR_DATA_TYPES(input.type(), "q_cpu_forward", ([&] {
       output = q_cpu_forward<scalar_t>(input, input_low, input_range, levels);
     }));
 
@@ -100,7 +103,7 @@ std::vector<at::Tensor> q_backward(
     CHECK_INPUT(input_range);
 
     std::vector<at::Tensor> results;
-    AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.type(), "q_cpu_backward", ([&] {
+    DISPATCH_TENSOR_DATA_TYPES(input.type(), "q_cpu_backward", ([&] {
         results = q_cpu_backward<scalar_t>(grad_output, input, input_low, input_range, levels, level_low, level_high, is_asymmetric);
     }));
 

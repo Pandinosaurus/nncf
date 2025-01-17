@@ -12,9 +12,9 @@
     "normalize_coef": 255,
     "rgb": true
   },
-  "max_iter": 100000,
+  "epochs": 386,
   "batch_size": 256,
-  "iter_size": 1,
+  "test_interval": 5,
   "save_freq": 50,
   "optimizer": {
     "type": "Adam",
@@ -57,6 +57,6 @@
     {
       "algorithm": "quantization"
     }
-  ]
+  ],
+  "export_to_ir_via_onnx": true
 }
-

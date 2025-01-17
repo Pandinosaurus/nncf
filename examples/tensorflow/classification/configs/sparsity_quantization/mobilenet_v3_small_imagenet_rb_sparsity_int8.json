@@ -52,15 +52,6 @@
         },
         {
             "algorithm": "quantization",
-            "weights": {
-                "mode": "symmetric",
-                "bits": 8,
-                "per_channel": true
-            },
-            "activations": {
-                "mode": "asymmetric",
-                "bits": 8,
-                "per_channel": false
-            }
+            "preset": "mixed"
         }]
 }

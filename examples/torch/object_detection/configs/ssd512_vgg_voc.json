@@ -15,9 +15,8 @@
     "rgb": true
   },
   "batch_size": 160,
-  "max_iter": 120000,
-  "iter_size": 1,
-  "save_freq": 50, // in epochs
+  "epochs": 740,
+  "save_freq": 50,
   "optimizer": {
     "type": "Adam",
     "base_lr": 1e-4,
@@ -33,5 +32,6 @@
     "variance": [0.1, 0.1, 0.2, 0.2],
     "clip": false,
     "flip": true
-  }
+  },
+  "export_to_ir_via_onnx": true
 }

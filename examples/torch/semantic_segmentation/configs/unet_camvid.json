@@ -20,7 +20,6 @@
     },
 
     "weighing": "mfb",
-
     "optimizer": {
         "type": "Adam",
         "optimizer_params": {

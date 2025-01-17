@@ -1,35 +1,32 @@
-"""
- Copyright (c) 2019-2020 Intel Corporation
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-      http://www.apache.org/licenses/LICENSE-2.0
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-"""
-
+# Copyright (c) 2025 Intel Corporation
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#      http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from typing import TypeVar
 
 import torch.nn
 
+import nncf
 from nncf import NNCFConfig
 from nncf.common.composite_compression import CompositeCompressionAlgorithmBuilder
 from nncf.common.composite_compression import CompositeCompressionAlgorithmController
 from nncf.common.composite_compression import CompositeCompressionLoss
 from nncf.config.extractors import extract_algorithm_names
-from nncf.torch.algo_selector import COMPRESSION_ALGORITHMS
+from nncf.torch.algo_selector import PT_COMPRESSION_ALGORITHMS
 from nncf.torch.compression_method_api import PTCompressionAlgorithmBuilder
 from nncf.torch.compression_method_api import PTCompressionAlgorithmController
 from nncf.torch.compression_method_api import PTCompressionLoss
 from nncf.torch.graph.transformations.layout import PTTransformationLayout
+from nncf.torch.model_transformer import PTModelTransformer
 from nncf.torch.nncf_network import NNCFNetwork
-from nncf.torch.nncf_network import PTModelTransformer
-from nncf.torch.pruning.base_algo import BasePruningAlgoController
 
-ModelType = TypeVar('ModelType')
+TModel = TypeVar("TModel")
 
 
 class PTCompositeCompressionLoss(CompositeCompressionLoss, PTCompressionLoss):
@@ -42,18 +39,18 @@ class PTCompositeCompressionLoss(CompositeCompressionLoss, PTCompressionLoss):
         return self._child_losses
 
 
-class PTCompositeCompressionAlgorithmBuilder(
-        CompositeCompressionAlgorithmBuilder, PTCompressionAlgorithmBuilder):
+class PTCompositeCompressionAlgorithmBuilder(CompositeCompressionAlgorithmBuilder, PTCompressionAlgorithmBuilder):
     def __init__(self, config: NNCFConfig, should_init: bool = True):
-
         super().__init__(config, should_init)
 
         algo_names = extract_algorithm_names(config)
         if len(algo_names) < 2:
-            raise RuntimeError('Composite algorithm builder must be supplied with a config with more than one '
-                               'compression algo specified!')
+            raise nncf.ValidationError(
+                "Composite algorithm builder must be supplied with a config with more than one "
+                "compression algo specified!"
+            )
         for algo_name in algo_names:
-            algo_builder = COMPRESSION_ALGORITHMS.get(algo_name)
+            algo_builder = PT_COMPRESSION_ALGORITHMS.get(algo_name)
             self._child_builders.append(algo_builder(config, should_init=should_init))
 
     def __bool__(self):
@@ -68,7 +65,7 @@ class PTCompositeCompressionAlgorithmBuilder(
 
         return transformed_model
 
-    def _build_controller(self, model: ModelType) -> PTCompressionAlgorithmController:
+    def _build_controller(self, model: TModel) -> PTCompressionAlgorithmController:
         """
         Simple implementation of building controller without setting builder state and loading controller's one.
         Builds `PTCompositeCompressionAlgorithmController` to handle the additional
@@ -86,7 +83,7 @@ class PTCompositeCompressionAlgorithmBuilder(
             composite_ctrl.add(builder.build_controller(model))
         return composite_ctrl
 
-    def get_transformation_layout(self, model: ModelType) -> PTTransformationLayout:
+    def get_transformation_layout(self, model: TModel) -> PTTransformationLayout:
         """
         Computes necessary model transformations to enable algorithm-specific
         compression.
@@ -100,7 +97,7 @@ class PTCompositeCompressionAlgorithmBuilder(
             transformations.update(builder.get_transformation_layout(model))
         return transformations
 
-    def initialize(self, model: ModelType) -> None:
+    def initialize(self, model: TModel) -> None:
         for builder in self.child_builders:
             if builder.should_init:
                 builder.initialize(model)
@@ -110,8 +107,9 @@ class PTCompositeCompressionAlgorithmBuilder(
 
 
 class PTCompositeCompressionAlgorithmController(
-    CompositeCompressionAlgorithmController, PTCompressionAlgorithmController):
-    def __init__(self, target_model: ModelType):
+    CompositeCompressionAlgorithmController, PTCompressionAlgorithmController
+):
+    def __init__(self, target_model: TModel):
         super().__init__(target_model)
         self._loss = PTCompositeCompressionLoss()
 
@@ -120,10 +118,16 @@ class PTCompositeCompressionAlgorithmController(
             ctrl.distributed()
 
     def prepare_for_export(self):
-        if len(self.child_ctrls) > 1 and any(isinstance(x, BasePruningAlgoController) for x in self.child_ctrls):
-            # Waiting for the implementation of the related function in OpenVINO
-            raise NotImplementedError("Exporting a model that was compressed by filter pruning algorithm "
-                                      "in combination with another compression algorithm is not yet supporting")
-
         for child_ctrl in self.child_ctrls:
             child_ctrl.prepare_for_export()
+
+    @property
+    def compression_rate(self) -> float:
+        sum_compression_rate = 0
+        not_none_compression_rate_cnt = 0
+        for child_ctrl in self.child_ctrls:
+            compression_rate = child_ctrl.compression_rate
+            if compression_rate is not None:
+                sum_compression_rate += sum_compression_rate
+                not_none_compression_rate_cnt += 1
+        return sum_compression_rate / max(not_none_compression_rate_cnt, 1)

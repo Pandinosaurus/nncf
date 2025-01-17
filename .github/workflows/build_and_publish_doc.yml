@@ -1,0 +1,57 @@
+name: Build complete docs and publish to GH Pages
+permissions: read-all
+
+on:
+  push:
+    branches:
+      - develop
+
+env:
+  GH_PAGES_BRANCH: doc_pages
+
+concurrency:
+  group: ci-${{ github.head_ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  call-build-html-doc:
+    uses: ./.github/workflows/build_html_doc.yml
+    with:
+      ref: ${{ github.ref }}
+  call-build-schema-page:
+    uses: ./.github/workflows/build_schema_page.yml
+  publish:
+    needs: [call-build-html-doc, call-build-schema-page]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout main repo  # the github-pages-deploy-action seems to require this step
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+
+      - name: Download HTML doc build artifact
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: html_doc_artifact
+      - name: Extract artifact
+        shell: 'bash'
+        run: |
+          tar -xvf artifact.tar
+          rm artifact.tar
+
+      - name: Download schema doc build artifact
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: schema_doc_artifact
+          path: html_build/html
+      - name: Extract artifact
+        shell: 'bash'
+        working-directory: html_build/html
+        run: |
+          tar -xvf artifact.tar
+          rm artifact.tar
+
+      - name: Publish built docs on Github Pages branch ${{ env.GH_PAGES_BRANCH }}
+        uses: JamesIves/github-pages-deploy-action@5c6e9e9f3672ce8fd37b9856193d2a537941e66c # v4.6.1
+        with:
+          folder: html_build/html
+          token: ${{ secrets.PUSH_TO_GH_PAGES_BRANCH }}
+          branch: ${{ env.GH_PAGES_BRANCH }}

@@ -20,6 +20,8 @@
     "dataset": "imagenet2012",
     "dataset_type": "tfds",
 
+    "disable_tensor_float_32_execution": true,
+
     "compression":[
         {
             "algorithm": "rb_sparsity",
@@ -32,13 +34,12 @@
         },
         {
             "algorithm": "quantization",
+            "preset": "mixed",
             "weights": {
-                "mode": "symmetric",
                 "bits": 8,
                 "per_channel": true
             },
             "activations": {
-                "mode": "asymmetric",
                 "bits": 8,
                 "per_channel": false
             }

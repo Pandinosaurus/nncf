@@ -1,0 +1,69 @@
+name: API changes check
+permissions: read-all
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+env:
+  API_DOC_HTML_ROOT_RELATIVE_PATH: autoapi
+
+concurrency:
+  group: ci-${{ github.head_ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  call-build-api-doc:
+    uses: ./.github/workflows/build_html_doc.yml
+    with:
+      ref: "refs/pull/${{ github.event.number }}/merge"
+  compare-api-doc-with-develop:
+    timeout-minutes: 30
+    needs: call-build-api-doc
+    runs-on: ubuntu-20.04
+    permissions:
+      issues: write
+    steps:
+      - name: Download built HTML doc as artifact from previous step
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: html_doc_artifact
+      - run: |
+          tar -xvf artifact.tar
+          rm artifact.tar
+        shell: 'bash'
+      - name: Checkout latest doc_pages branch tip
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        with:
+          ref: doc_pages
+          path: previous_doc_state
+      - name: Get changed file names in API doc path
+        id: diff
+        run: |
+          cd html_build/html/$API_DOC_HTML_ROOT_RELATIVE_PATH
+          CHANGED_FILES=$(find . -name "*.html" -exec diff -qrBZ {} $GITHUB_WORKSPACE/previous_doc_state/$API_DOC_HTML_ROOT_RELATIVE_PATH/{} \;)
+          echo ${CHANGED_FILES}
+          CHANGED_FILES=$(echo $CHANGED_FILES | tr '\n' ' ')
+          echo "changed_files=${CHANGED_FILES}" >> $GITHUB_OUTPUT
+
+      - name: Add label
+        if: ${{ contains(steps.diff.outputs.changed_files, 'differ') }}
+        run: |
+          echo '{"pr_number": "${{ github.event.pull_request.number }}", "action": "add"}' > api_status.json
+
+      - name: Remove label
+        if: ${{ !(contains(steps.diff.outputs.changed_files, 'differ')) && contains(github.event.pull_request.labels.*.name, 'API') }}
+        run: |
+          echo '{"pr_number": "${{ github.event.pull_request.number }}", "action": "remove"}' > api_status.json
+
+      - name: No change label
+        if: ${{ !(contains(steps.diff.outputs.changed_files, 'differ')) && !contains(github.event.pull_request.labels.*.name, 'API') }}
+        run: |
+          echo '{"pr_number": "${{ github.event.pull_request.number }}", "action": "none"}' > api_status.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b #v4.5.0
+        with:
+          name: api_status
+          path: api_status.json
